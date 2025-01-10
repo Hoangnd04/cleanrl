@@ -13,7 +13,9 @@ import torch.optim as optim
 import tyro
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
-
+import sys
+current_dir = os.getcwd()
+sys.path.append(os.path.join(current_dir, 'cleanrl'))
 
 @dataclass
 class Args:
