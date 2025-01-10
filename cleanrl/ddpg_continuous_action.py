@@ -65,11 +65,11 @@ class Args:
     """noise clip parameter of the Target Policy Smoothing Regularization"""
 
 
-def make_env(env_id, seed, idx, capture_video, run_name):
+def make_env(env_id, seed, idx, capture_video, run_name, record_bool=False):
     def thunk():
-        if capture_video and idx == 0:
+        if capture_video and record_bool and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array")
-            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}", episode_trigger=lambda episode_id: episode_id > 0 and episode_id % 1900 == 0)
+            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
         else:
             env = gym.make(env_id)
         env = gym.wrappers.RecordEpisodeStatistics(env)
@@ -255,9 +255,9 @@ poetry run pip install "stable_baselines3==2.0.0a1"
 
         episodic_returns = evaluate(
             model_path,
-            make_env,
+            lambda *args: make_env(*args, record_bool=True),
             args.env_id,
-            eval_episodes=10,
+            eval_episodes=1,
             run_name=f"{run_name}-eval",
             Model=(Actor, QNetwork),
             device=device,
