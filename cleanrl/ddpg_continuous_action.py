@@ -13,9 +13,9 @@ import torch.optim as optim
 import tyro
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
-import sys
-current_dir = os.getcwd()
-sys.path.append(os.path.join(current_dir, 'cleanrl'))
+# import sys
+# current_dir = os.getcwd()
+# sys.path.append(os.path.join(current_dir, 'cleanrl'))
 
 @dataclass
 class Args:
@@ -67,11 +67,11 @@ class Args:
     """noise clip parameter of the Target Policy Smoothing Regularization"""
 
 
-def make_env(env_id, seed, idx, capture_video, run_name, record_bool=False):
+def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
         if capture_video and record_bool and idx == 0:
             env = gym.make(env_id, render_mode="rgb_array")
-            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
+            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}", episode_trigger=lambda episode_id: episode_id % 4900 == 0)
         else:
             env = gym.make(env_id)
         env = gym.wrappers.RecordEpisodeStatistics(env)
@@ -257,7 +257,7 @@ poetry run pip install "stable_baselines3==2.0.0a1"
 
         episodic_returns = evaluate(
             model_path,
-            lambda *args: make_env(*args, record_bool=True),
+            make_env,
             args.env_id,
             eval_episodes=1,
             run_name=f"{run_name}-eval",
