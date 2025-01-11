@@ -66,20 +66,31 @@ class Args:
     noise_clip: float = 0.5
     """noise clip parameter of the Target Policy Smoothing Regularization"""
 
+temp_vid = True  # Biến toàn cục để kiểm soát việc quay video
 
-def make_env(env_id, seed, idx, capture_video, run_name):
+def make_env(env_id, seed, idx, capture_video, run_name, min_return=3000):
+    global temp_vid  # Cần khai báo để sửa đổi biến này trong `episode_trigger`
+
     def thunk():
+        env = gym.make(env_id, render_mode="rgb_array") if capture_video and idx == 0 else gym.make(env_id)
+
+        def episode_trigger(episode_id):
+            global temp_vid
+            if temp_vid and hasattr(env, 'return_queue') and len(env.return_queue) > 0:
+                last_return = env.return_queue[-1]
+                if last_return >= min_return:
+                    temp_vid = False  # Tắt quay sau khi ghi được một video thỏa mãn
+                    return True
+            return False
+
         if capture_video and idx == 0:
-            env = gym.make(env_id, render_mode="rgb_array")
-            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}", episode_trigger=lambda episode_id: episode_id > 0 and episode_id % 2500 == 0)
-        else:
-            env = gym.make(env_id)
+            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}", episode_trigger=episode_trigger)
+
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env.action_space.seed(seed)
         return env
 
     return thunk
-
 
 # ALGO LOGIC: initialize agent here:
 class QNetwork(nn.Module):
